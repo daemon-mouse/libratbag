@@ -1009,12 +1009,23 @@ class RatbagdMacro(GObject.Object):
     # Both a key press and release.
     _MACRO_KEY = 1000
 
-    _MACRO_DESCRIPTION = {
-        RatbagdButton.Macro.KEY_PRESS: lambda key: f"↓{evcode_to_str(key)}",
-        RatbagdButton.Macro.KEY_RELEASE: lambda key: f"↑{evcode_to_str(key)}",
-        RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
-        _MACRO_KEY: lambda key: f"↕{evcode_to_str(key)}",
-    }
+    class _MACRO_DESCRIPTION_DICT(dict):
+        def __missing__(self, key):
+            print(
+                # Translators: There is no description for this macro type. This is a bug.
+                N_("error: missing description for macro type {}").format(key),
+                file=sys.stderr,
+            )
+            return lambda val: f"{key}:{val}"
+
+    _MACRO_DESCRIPTION = _MACRO_DESCRIPTION_DICT(
+        {
+            RatbagdButton.Macro.KEY_PRESS: lambda key: f"↓{evcode_to_str(key)}",
+            RatbagdButton.Macro.KEY_RELEASE: lambda key: f"↑{evcode_to_str(key)}",
+            RatbagdButton.Macro.WAIT: lambda val: f"{val}ms",
+            _MACRO_KEY: lambda key: f"↕{evcode_to_str(key)}",
+        },
+    )
 
     __gsignals__ = {
         "macro-set": (GObject.SignalFlags.RUN_FIRST, None, ()),
